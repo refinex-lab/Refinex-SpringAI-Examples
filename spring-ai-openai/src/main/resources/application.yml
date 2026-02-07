@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: spring-ai-quickstart
+
+  ai:
+    openai:
+      # 必填：你的 API Key
+      api-key: ${OPENAI_API_KEY}
+      # 选填：如果你用 DeepSeek 或中转代理，需要修改 base-url
+      base-url: https://code.ppchat.vip
+      chat:
+        options:
+          # 选填：全局默认模型，如 gpt-4o 或 deepseek-chat
+          model: gpt-5.2

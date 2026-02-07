@@ -16,8 +16,10 @@
 
     <name>Refinex-SpringAI-Examples</name>
     <description>用于试验 Spring AI 集成及相关演示的示例项目。</description>
+
     <modules>
         <module>spring-ai-quickstart</module>
+        <module>spring-ai-openai</module>
     </modules>
 
     <properties>

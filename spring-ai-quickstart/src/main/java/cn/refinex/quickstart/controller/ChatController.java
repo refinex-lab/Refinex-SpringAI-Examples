@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 聊天 控制器
+ * Spring AI QuickStart 控制器
  *
  * @author refinex
  */
