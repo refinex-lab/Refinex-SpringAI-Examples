@@ -1,6 +1,6 @@
 spring:
   application:
-    name: spring-ai-quickstart
+    name: spring-ai-openai
 
   ai:
     openai:
