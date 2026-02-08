@@ -1,0 +1,12 @@
+spring:
+
+  application:
+    name: spring-ai-reasoning-content
+
+  ai:
+    deepseek:
+      api-key: ${DEEPSEEK_API_KEY}
+      base-url: https://api.deepseek.com
+      chat:
+        options:
+          model: deepseek-reasoner

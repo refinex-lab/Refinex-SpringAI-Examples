@@ -22,6 +22,7 @@
         <module>spring-ai-openai</module>
         <module>spring-ai-deepseek</module>
         <module>spring-ai-multi-model</module>
+        <module>spring-ai-reasoning-content</module>
     </modules>
 
     <properties>
