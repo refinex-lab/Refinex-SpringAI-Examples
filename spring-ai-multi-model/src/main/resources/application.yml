@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: spring-ai-multi-model
+
+  ai:
+    chat:
+      client:
+        enabled: false # 禁用默认 ChatClient.Builder 自动配置
+
+    # OpenAI 配置
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      # 选填：如果你用 DeepSeek 或中转代理，需要修改 base-url
+      #base-url: https://api.openai.com
+      base-url: https://code.ppchat.vip
+      chat:
+        options:
+          # 使用中转代理支持的模型
+          model: gpt-5.2
+
+    # DeepSeek 配置
+    deepseek:
+      api-key: ${DEEPSEEK_API_KEY}
+      base-url: https://api.deepseek.com
+      chat:
+        options:
+          model: deepseek-chat
+
+    # 你还可以加入本地模型（如 Ollama）
+    # ollama:
+    #   base-url: http://localhost:11434
