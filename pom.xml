@@ -26,6 +26,7 @@
         <module>spring-ai-prefixcompletion</module>
         <module>spring-ai-anthropic</module>
         <module>spring-ai-minimax</module>
+        <module>spring-ai-zhipu</module>
     </modules>
 
     <properties>

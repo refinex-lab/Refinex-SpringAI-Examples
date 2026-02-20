@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: spring-ai-zhipu
+
+  ai:
+    model:
+      # 多模型共存时显式声明
+      chat: zhipuai
+    zhipuai:
+      api-key: ${ZHIPUAI_API_KEY}
+      # 国内站（默认）, 国际站使用 https://api.z.ai/api/paas
+      base-url: ${ZHIPUAI_BASE_URL:https://open.bigmodel.cn/api/paas}
+      chat:
+        options:
+          # 高性能场景；快速上手可改为 glm-4-air
+          model: glm-4.6
+          temperature: 0.7
+          max-tokens: 4096
+          # false 时 temperature 和 topP 完全失效
+          do-sample: true
