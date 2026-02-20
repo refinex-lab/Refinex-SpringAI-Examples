@@ -27,6 +27,7 @@
         <module>spring-ai-anthropic</module>
         <module>spring-ai-minimax</module>
         <module>spring-ai-zhipu</module>
+        <module>spring-ai-ollama</module>
     </modules>
 
     <properties>

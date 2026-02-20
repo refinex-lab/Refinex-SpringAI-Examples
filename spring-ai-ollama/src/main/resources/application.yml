@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: spring-ai-ollama
+
+  ai:
+    model:
+      # 多模型共存时显式声明
+      chat: ollama
+    ollama:
+      init:
+        # 拉取策略:
+        # - always: 每次启动都拉取最新版本，确保最新（但慢）
+        # - when_missing: 仅在本地不存在时拉取（可能使用旧版本）
+        # - never: 从不自动拉取（生产环境推荐）
+        pull-model-strategy: when_missing
+        # 拉取超时时间
+        timeout: 60s
+        # 最大重试次数
+        max-retries: 1
+        chat:
+          # 额外预热的模型
+          additional-models:
+            - llama3.2
+            - deepseek-r1:7b
+      base-url: http://localhost:11434
+      chat:
+        options:
+          # 推荐：中文 + 推理能力强
+          model: llama3
+          temperature: 0.7
+          # 增大上下文窗口
+          num-ctx: 8192
