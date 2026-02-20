@@ -1,0 +1,24 @@
+spring:
+
+  application:
+    name: spring-ai-anthropic
+
+  ai:
+    anthropic:
+      # 默认值 https://api.anthropic.com，一般不需要修改，除非你走的转发
+      base-url: ${ANTHROPIC_BASE_URL:https://api.anthropic.com}
+      # 从环境变量读取 (必填)
+      api-key: ${ANTHROPIC_API_KEY}
+      # Anthropic API 版本，保持默认
+      version: 2023-06-01
+      # Beta 能力开关，启用 1M 上下文时改为 context-1m-2025-08-07
+      beta-version: tools-2024-04-04
+      chat:
+        # 下面的配置可以在运行时覆盖
+        options:
+          # 试验阶段用 alias；生产环境换为具体版本 ID
+          model: claude-opus-4-6
+          # 温度
+          temperature: 0.8
+          # 默认 500 偏低，建议调高
+          max-tokens: 4096

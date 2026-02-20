@@ -24,6 +24,7 @@
         <module>spring-ai-multi-model</module>
         <module>spring-ai-reasoning-content</module>
         <module>spring-ai-prefixcompletion</module>
+        <module>spring-ai-anthropic</module>
     </modules>
 
     <properties>
