@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: spring-ai-prompt
+
+  ai:
+    deepseek:
+      # 推荐从环境变量读取，安全第一
+      api-key: ${DEEPSEEK_API_KEY}
+      base-url: https://api.deepseek.com
+      chat:
+        options:
+          # 核心：选择你要用的模型，可选 deepseek-chat 或 deepseek-reasoner
+          model: deepseek-chat
+          # 设置温度，平衡严谨与发散
+          temperature: 0.7

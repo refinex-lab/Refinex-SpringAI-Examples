@@ -28,6 +28,7 @@
         <module>spring-ai-minimax</module>
         <module>spring-ai-zhipu</module>
         <module>spring-ai-ollama</module>
+        <module>spring-ai-prompt</module>
     </modules>
 
     <properties>
