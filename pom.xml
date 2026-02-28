@@ -1,0 +1,609 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ============================================================
+         Refinex-SpringAI-Examples Parent POM
+         Version  : ${revision} → 见 <properties> 中的 <revision>
+         Java     : 21
+         Boot     : 3.5.8
+         Cloud    : 2025.0.1
+         SCA      : 2025.0.0.0
+         Spring AI: 1.1.2
+         Encoding : UTF-8
+    ============================================================ -->
+
+    <groupId>cn.refinex</groupId>
+    <artifactId>Refinex-SpringAI-Examples</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <name>Refinex-SpringAI-Examples</name>
+    <description>
+        Refinex SpringAI Platform — 基于 Spring AI 的 AI 平台示例，
+        提供智能对话、RAG 知识库、Agent 编排、多模态媒体生成和企业系统管理能力。
+    </description>
+    <url>https://www.refinex.cn</url>
+
+    <!-- ============================================================
+         模块声明
+         策略：父 POM 直接声明所有叶子模块的路径（扁平化声明）
+    ============================================================ -->
+    <modules>
+    </modules>
+
+    <!-- ============================================================
+         版本属性
+         约定：
+           1. ${revision} 统一管理工程版本，子模块版本由 flatten 插件在
+              install/deploy 时解析写入，不得在子模块中硬编码版本号。
+           2. 所有三方依赖版本在此锁定，子 POM 中不得单独覆盖。
+           3. Spring BOM 引入的依赖版本由 BOM 仲裁，无需在此重复声明。
+    ============================================================ -->
+    <properties>
+        <!-- 工程统一版本（CI 友好，通过命令行 -Drevision=x.y.z 覆盖） -->
+        <revision>1.0.0-SNAPSHOT</revision>
+
+        <!-- 构建基础 -->
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+
+        <!-- ── Spring 生态系统 BOM 版本 ──────────────────────────── -->
+        <spring-boot.version>3.5.8</spring-boot.version>
+        <!--
+            Spring Cloud 版本命名与 Spring Boot 完全独立，采用年份式方案：
+              Spring Boot 3.3.x → Spring Cloud 2023.0.x (Leyton)
+              Spring Boot 3.4.x → Spring Cloud 2024.0.x (Moorgate)
+              Spring Boot 3.5.x → Spring Cloud 2025.0.x (使用 2025.0.1 GA)
+        -->
+        <spring-cloud.version>2025.0.1</spring-cloud.version>
+        <!--
+            Spring Cloud Alibaba BOM 内聚 Nacos 2.x、Sentinel 1.8.x、
+            Seata 2.x、RocketMQ 5.x，版本由阿里官方统一验证，禁止子模块单独覆盖。
+        -->
+        <spring-cloud-alibaba.version>2025.0.0.0</spring-cloud-alibaba.version>
+        <!--
+            Spring AI 处于快速迭代期，API 稳定性弱于其他 Spring 项目。
+            业务代码禁止直接调用 Spring AI API，须通过 refinex-ai 模块内
+            的 AiGatewayService 接口隔离，版本升级时只改该接口的实现类。
+        -->
+        <spring-ai.version>1.1.2</spring-ai.version>
+
+        <!-- Spring Boot Admin: https://github.com/codecentric/spring-boot-admin/releases -->
+        <spring-boot-admin.version>3.5.6</spring-boot-admin.version>
+
+        <!-- ── 持久化 ──────────────────────────────────────────── -->
+        <mybatis-plus.version>3.5.12</mybatis-plus.version>
+        <dynamic-datasource.version>4.3.1</dynamic-datasource.version>
+        <druid.version>1.2.24</druid.version>
+        <!-- p6spy 仅 local profile 启用，staging/prod 禁止开启 -->
+        <p6spy.version>3.9.1</p6spy.version>
+
+        <!-- ── 代码生成与通用工具 ──────────────────────────────── -->
+        <mapstruct.version>1.6.3</mapstruct.version>
+        <lombok.version>1.18.36</lombok.version>
+        <hutool.version>5.8.36</hutool.version>
+        <guava.version>33.4.8-jre</guava.version>
+        <commons-lang3.version>3.17.0</commons-lang3.version>
+        <commons-io.version>2.18.0</commons-io.version>
+
+        <!-- ── 测试 ───────────────────────────────────────────── -->
+        <testcontainers.version>1.21.0</testcontainers.version>
+
+        <!-- ── Maven 插件 ──────────────────────────────────────── -->
+        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
+        <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+        <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
+        <spring-boot-maven-plugin.version>${spring-boot.version}</spring-boot-maven-plugin.version>
+    </properties>
+
+    <!-- ============================================================
+         依赖管理
+         导入顺序：Spring BOM（Boot → Cloud → SCA → AI）→ Testcontainers → 内部模块 → 三方依赖（按领域分组）
+         说明：BOM import 只锁定版本，不向任何模块添加实际依赖。
+    ============================================================ -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- ════════════════════════════════════════════════════
+                 Spring 生态系统 BOM
+                 顺序不可更改：Boot BOM 必须排第一，后续 BOM 中存在
+                 对 Spring Boot 依赖的间接引用，顺序错误会导致版本仲裁混乱。
+            ════════════════════════════════════════════════════ -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>de.codecentric</groupId>
+                <artifactId>spring-boot-admin-starter-server</artifactId>
+                <version>${spring-boot-admin.version}</version>
+            </dependency>
+
+            <!-- ════════════════════════════════════════════════════
+                 持久化
+            ════════════════════════════════════════════════════ -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-annotation</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-extension</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <!--
+                dynamic-datasource：支持 @DS 注解的方法级数据源切换。
+                在 refinex-knowledge 中用于 MySQL（业务元数据）与 PostgreSQL（PGVector 向量存储）的运行时切换。
+            -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>dynamic-datasource-spring-boot3-starter</artifactId>
+                <version>${dynamic-datasource.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>druid-spring-boot-3-starter</artifactId>
+                <version>${druid.version}</version>
+            </dependency>
+            <!-- p6spy：打印含实际参数值的完整 SQL，仅 local profile 引入，在 staging/prod 引入会严重影响写入性能。 -->
+            <dependency>
+                <groupId>p6spy</groupId>
+                <artifactId>p6spy</artifactId>
+                <version>${p6spy.version}</version>
+            </dependency>
+
+            <!-- ════════════════════════════════════════════════════
+                 代码生成
+            ════════════════════════════════════════════════════ -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <!--
+                MapStruct：编译期 Bean 映射，零反射开销。
+                注意：annotationProcessorPaths 中 Lombok 必须先于 MapStruct 声明，
+                     否则 MapStruct 生成时看不到 Lombok 生成的 getter/setter，
+                     会静默生成不完整映射代码，仅在运行时暴露 NPE。
+            -->
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-processor</artifactId>
+                <version>${mapstruct.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- ════════════════════════════════════════════════════
+                 通用工具库
+            ════════════════════════════════════════════════════ -->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
+
+            <!-- ════════════════════════════════════════════════════
+                 知识库文档解析 — Spring AI ETL Pipeline Document Readers
+                 ─────────────────────────────────────────────────
+                 Spring AI 1.1.2 提供了标准的 DocumentReader 实现，统一接入 ETL 数据流
+                 （DocumentReader → DocumentTransformer → VectorStore），替代直接使用
+                 pdfbox、tika、jsoup 等底层库，无需手动管理 Document 对象的构建与转换。
+
+                 ⚠️ 版本说明：spring-ai-*-document-reader 系列 artifact 未包含在
+                 spring-ai-bom（1.1.2）的管理范围内，需在此显式声明 ${spring-ai.version}。
+                 spring-ai-starter-model-* 和 spring-ai-starter-vector-store-* 系列
+                 artifact 仍由 BOM 统一管理，子模块中无需声明版本。
+
+                 内置 Reader（已在 spring-ai-core 中，无需额外依赖）：
+                   JsonReader   — 解析 JSON 文件，按 key 构建 Document
+                   TextReader   — 解析纯文本文件，整文件作为单一 Document
+            ════════════════════════════════════════════════════ -->
+
+            <!--
+                PDF 解析
+
+                提供两种粒度：
+                  PagePdfDocumentReader      — 按页拆分，适合扫描件、版式类文档
+                  ParagraphPdfDocumentReader — 按段落拆分（基于 PDFBox 结构分析），适合正文段落清晰的学术文档、报告，分块语义完整性更好
+
+                传递依赖已包含 pdfbox，无需单独声明 pdfbox 坐标。
+            -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-pdf-document-reader</artifactId>
+                <version>${spring-ai.version}</version>
+            </dependency>
+
+            <!--
+                多格式文档解析（DOCX、PPTX、HTML、XLSX、ODT 等）→ 使用模块：refinex-knowledge
+
+                提供：TikaDocumentReader，基于 Apache Tika 的格式检测与文本提取统一门面。
+                传递依赖已包含 tika-core + tika-parsers-standard-package，无需单独声明 tika 坐标。
+
+                ⚠️ 注意：Tika 解析 Office 文件时传递引入自己版本的 poi，可能与下方 easyexcel 传递的 poi 版本不一致，导致
+                   ClassConflictException。通过显式声明 poi-ooxml 版本（见下方）强制统一，以 ${poi.version} 为准。
+            -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-tika-document-reader</artifactId>
+                <version>${spring-ai.version}</version>
+            </dependency>
+
+            <!--
+                HTML 网页解析
+                提供：JsoupDocumentReader
+                传递依赖已包含 jsoup，无需单独声明 jsoup 坐标。
+                相较于直接使用 jsoup，JsoupDocumentReader 会自动过滤导航栏、
+                页脚、广告等噪声区域，仅提取正文内容，减少分块前的清洗工作量。
+            -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-jsoup-document-reader</artifactId>
+                <version>${spring-ai.version}</version>
+            </dependency>
+
+            <!--
+                Markdown 解析
+                提供：MarkdownDocumentReader
+                支持按标题层级（H1/H2/H3）拆分文档为独立 Document，适合将 Markdown 格式的技术文档、Wiki 页面导入知识库。
+            -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-markdown-document-reader</artifactId>
+                <version>${spring-ai.version}</version>
+            </dependency>
+
+            <!-- ════════════════════════════════════════════════════
+                 测试
+            ════════════════════════════════════════════════════ -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <version>${spring-boot.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- ============================================================
+         全局公共依赖
+         原则：仅放置每个模块都真正需要的依赖，保持列表极简。非普遍需要的依赖须在各子模块的 pom.xml 中单独声明。
+    ============================================================ -->
+    <dependencies>
+        <!-- Lombok：编译期注解处理，provided 确保不进入运行时 classpath -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- 单元测试基础设施：所有模块通用 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <!-- ============================================================
+         构建配置
+    ============================================================ -->
+    <build>
+        <pluginManagement>
+            <plugins>
+
+                <!--
+                    Java 21 编译器配置
+                    关键事项：
+                      1. annotationProcessorPaths 中 Lombok 必须先于 MapStruct。
+                         MapStruct 需要读取 Lombok 生成的 getter/setter，
+                         顺序颠倒会导致映射方法静默生成不完整版本，运行时暴露 NPE。
+                      2. enable-preview 同时需要在 maven-surefire-plugin 的 argLine
+                         中声明。仅编译期启用而测试期不启用，会在测试阶段抛出
+                         UnsupportedClassVersionError，是常见的遗漏点。
+                -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                        <parameters>true</parameters>
+                        <annotationProcessorPaths>
+                            <!-- Lombok 必须先于 MapStruct -->
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                            <path>
+                                <groupId>org.mapstruct</groupId>
+                                <artifactId>mapstruct-processor</artifactId>
+                                <version>${mapstruct.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                        <compilerArgs>
+                            <arg>--enable-preview</arg>
+                        </compilerArgs>
+                    </configuration>
+                </plugin>
+
+                <!--
+                    Spring Boot 打包插件
+                    仅在业务服务模块（含 main class）的 pom.xml 中激活，
+                    common 和 api 模块使用默认 jar 打包，不引入此插件。
+                    Lombok 以 provided scope 引入，需显式排除，否则进入 fat jar。
+                -->
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot-maven-plugin.version}</version>
+                    <configuration>
+                        <excludes>
+                            <exclude>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                            </exclude>
+                        </excludes>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                    <configuration>
+                        <!-- 与编译期的 enable-preview 保持一致，两者缺一不可，否则测试阶段抛出 UnsupportedClassVersionError -->
+                        <argLine>--enable-preview</argLine>
+                        <!-- 集成测试（*IT.java）在 verify 阶段单独运行，不混入 test 阶段的单元测试集 -->
+                        <excludes>
+                            <exclude>**/*IT.java</exclude>
+                            <exclude>**/*IntegrationTest.java</exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven-resources-plugin.version}</version>
+                    <configuration>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                    </configuration>
+                </plugin>
+
+                <!--
+                    flatten-maven-plugin：CI 友好版本号（${revision}）解析
+                    ─────────────────────────────────────────────────
+                    问题：Maven 原生不支持在 <version> 中使用属性占位符对外发布。
+                    子模块 install/deploy 后，生成的 pom 中 <version> 仍是
+                    字面量 "${revision}"，下游解析失败。
+
+                    解决：flatten 插件在 process-resources 阶段生成
+                    .flattened-pom.xml，install/deploy 时用该文件替代原始 pom，
+                    其中 ${revision} 已被替换为实际版本号字符串。
+
+                    子模块无需重复声明此插件，继承父 POM 配置即可。
+                    .flattened-pom.xml 是构建产物，需加入 .gitignore。
+                -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${flatten-maven-plugin.version}</version>
+                    <configuration>
+                        <updatePomFile>true</updatePomFile>
+                        <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>flatten</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>flatten</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>flatten.clean</id>
+                            <phase>clean</phase>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+
+        <!-- 全局激活 flatten-maven-plugin，所有子模块均自动继承 -->
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+
+        <!--
+            资源过滤：启用 ${placeholder} 在 application.yaml 中的构建期替换，
+            用于注入 Maven Profile 激活的环境标识（${profiles.active}）。
+        -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+
+    <!-- ============================================================
+         构建 Profile
+         local   — 本地开发，启用 p6spy SQL 日志，DEBUG 级别
+         dev     — 远端开发环境，Nacos dev 命名空间，INFO 级别
+         test    — QA 测试环境，INFO 级别
+         staging — 预生产，镜像生产配置，WARN 级别
+         prod    — 生产，禁用 p6spy，异步日志落盘，WARN 级别
+    ============================================================ -->
+    <profiles>
+        <profile>
+            <id>local</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <profiles.active>local</profiles.active>
+                <logging.level.root>DEBUG</logging.level.root>
+            </properties>
+        </profile>
+        <profile>
+            <id>dev</id>
+            <properties>
+                <profiles.active>dev</profiles.active>
+                <logging.level.root>INFO</logging.level.root>
+            </properties>
+        </profile>
+        <profile>
+            <id>test</id>
+            <properties>
+                <profiles.active>test</profiles.active>
+                <logging.level.root>INFO</logging.level.root>
+            </properties>
+        </profile>
+        <profile>
+            <id>staging</id>
+            <properties>
+                <profiles.active>staging</profiles.active>
+                <logging.level.root>WARN</logging.level.root>
+            </properties>
+        </profile>
+        <profile>
+            <id>prod</id>
+            <properties>
+                <profiles.active>prod</profiles.active>
+                <logging.level.root>WARN</logging.level.root>
+            </properties>
+        </profile>
+    </profiles>
+
+    <!-- ============================================================
+         仓库配置
+         使用阿里云镜像加速中国境内的依赖解析，企业内网时替换为 Nexus/Artifactory。
+         spring-milestones：Spring AI 1.1.2 的某些传递依赖来源于此，
+         即使使用正式版也需保留，否则部分 BOM artifact 无法解析。
+    ============================================================ -->
+    <repositories>
+        <repository>
+            <id>aliyun-central</id>
+            <name>Aliyun Central Mirror</name>
+            <url>https://maven.aliyun.com/repository/central</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+        <repository>
+            <id>aliyun-spring</id>
+            <name>Aliyun Spring Mirror</name>
+            <url>https://maven.aliyun.com/repository/spring</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+        <repository>
+            <id>spring-milestones</id>
+            <name>Spring Milestones</name>
+            <url>https://repo.spring.io/milestone</url>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+        <repository>
+            <id>spring-snapshots</id>
+            <name>Spring Snapshots</name>
+            <url>https://repo.spring.io/snapshot</url>
+            <releases><enabled>false</enabled></releases>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>aliyun-central</id>
+            <name>Aliyun Central Mirror</name>
+            <url>https://maven.aliyun.com/repository/central</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </pluginRepository>
+    </pluginRepositories>
+
+</project>
