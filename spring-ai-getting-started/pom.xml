@@ -1,0 +1,63 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cn.refinex</groupId>
+        <artifactId>Refinex-SpringAI-Examples</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>spring-ai-getting-started</artifactId>
+    <packaging>jar</packaging>
+
+    <name>spring-ai-getting-started</name>
+    <description>
+        Spring AI Getting Started Example
+        项目脚手架、BOM 配置、多 Provider 接入示例（OpenAI / DeepSeek / Ollama）
+    </description>
+
+    <dependencies>
+        <!-- Spring Boot Web（MVC 模式） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!--
+            Spring AI OpenAI Starter
+            注意命名：spring-ai-starter-model-openai（不是旧的 spring-ai-openai-spring-boot-starter）
+            版本由父工程的 spring-ai-bom 管理，此处不写 version
+        -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
+        </dependency>
+
+        <!-- DeepSeek Provider（国内合规场景） -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-deepseek</artifactId>
+        </dependency>
+
+        <!-- Ollama Provider（本地部署场景） -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-ollama</artifactId>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- 打包为可执行 Fat JAR，Lombok 已排除（父 POM pluginManagement 已配置） -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <!-- 指定主类，避免 IDE 识别错误 -->
+                <configuration>
+                    <mainClass>cn.refinex.started.RefinexStartedApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
