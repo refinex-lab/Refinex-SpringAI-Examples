@@ -1,0 +1,59 @@
+server:
+  port: 9092
+
+spring:
+  application:
+    name: spring-ai-chatclient
+
+  # ⚠️ Spring Boot 3.4+ 必须显式设置此属性
+  # 配置 HTTP 客户端工厂为 JDK 内置工厂
+  # 默认值 "reactor" 会破坏某些 AI 工作流（如 ImageModel）
+  http:
+    client:
+      factory: jdk
+
+  ai:
+
+    model:
+      # 指定使用哪个 Provider 的 Chat Model
+      # 值对应 SpringAIModels 枚举：openai / deepseek / ollama / anthropic 等
+      chat: deepseek
+      # 指定使用哪个 Provider 的 Embedding Model
+      embedding: openai
+
+    # ── DeepSeek ────────────────────────────────────
+    deepseek:
+      # DeepSeek API Key
+      api-key: ${DEEPSEEK_API_KEY}
+      # DeepSeek Chat Model 配置
+      chat:
+        # DeepSeek Chat Model 选项
+        options:
+          # DeepSeek Chat Model 名称
+          model: deepseek-chat
+          # DeepSeek Chat Model 温度
+          temperature: 0.7
+
+    # ── OpenAI（仅用于 Embedding / 备用 Chat）────────
+    openai:
+      # OpenAI API Key
+      api-key: ${OPENAI_API_KEY}
+      # OpenAI Chat Model 配置
+      chat:
+        # OpenAI Chat Model 选项
+        options:
+          # OpenAI Chat Model 名称
+          model: gpt-4o-mini
+          # OpenAI Chat Model 温度
+          temperature: 0.7
+
+    # ── Ollama（本地开发 / 测试）───────────────────
+    ollama:
+      # Ollama Base URL
+      base-url: http://localhost:11434
+      # Ollama Chat Model 配置
+      chat:
+        # Ollama Chat Model 选项
+        options:
+          # Ollama Chat Model 名称
+          model: qwen2.5
